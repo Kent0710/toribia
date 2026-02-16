@@ -12,14 +12,17 @@ const LeftPanel : React.FC<LeftPanelProps> = ({
 }) => {
     const recentVisits = [
         {
+            id: 1,
             placeName: "Central Park",
             location: "New York, USA",
         },
         {
+            id: 2,
             placeName: "Eiffel Tower",
             location: "Paris, France",
         },
         {
+            id: 3,
             placeName: "Colosseum",
             location: "Rome, Italy",
         },
@@ -34,6 +37,7 @@ const LeftPanel : React.FC<LeftPanelProps> = ({
                 {recentVisits.map((visit, index) => (
                     <LeftPanelItem 
                         key={index}
+                        id={visit.id}
                         placeName={visit.placeName}
                         location={visit.location}
                     />
