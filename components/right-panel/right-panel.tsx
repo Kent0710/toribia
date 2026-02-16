@@ -1,11 +1,21 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { twMerge } from "tailwind-merge";
 import { Subtitle, Description } from "../reusables/texts";
 import { useLocation } from "@/contexts/location-context";
 import { chatWithContext } from "@/app/actions/chat";
-import { SendHorizonal, MapPin, Loader2, Globe2, Compass, UtensilsCrossed, Landmark } from "lucide-react";
+import { 
+    SendHorizonal, 
+    MapPin, 
+    Loader2, 
+    Globe2, 
+    Compass, 
+    UtensilsCrossed, 
+    Landmark,
+    User 
+} from "lucide-react";
 import Markdown from "react-markdown";
 
 interface RightPanelProps {
@@ -42,7 +52,7 @@ const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
     // Auto-generate overview when location changes
     useEffect(() => {
         if (locationName && messages.length === 0) {
-            generateOverview();
+           generateOverview();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [locationName]);
@@ -180,151 +190,152 @@ const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
         }
     };
 
-    // Empty state — no location selected
-    if (!locationName && !isLoading) {
-        return (
-            <div
-                className={twMerge(
-                    `border-l flex flex-col items-center justify-center gap-3 text-center p-6`,
-                    className,
-                )}
-            >
-                <Globe2 className="size-10 text-neutral-300" />
-                <Subtitle className="text-neutral-400">
-                    Click a place on the globe
-                </Subtitle>
-                <Description className="text-xs text-neutral-400">
-                    Select any location to learn about its history,
-                    culture, landmarks, and more.
-                </Description>
-            </div>
-        );
-    }
-
-    // Loading state
-    if (isLoading) {
-        return (
-            <div
-                className={twMerge(
-                    `border-l flex flex-col items-center justify-center gap-3`,
-                    className,
-                )}
-            >
-                <Loader2 className="size-6 text-neutral-400 animate-spin" />
-                <Description className="text-xs text-neutral-400">
-                    Fetching location info...
-                </Description>
-            </div>
-        );
-    }
-
     return (
         <div
             className={twMerge(
-                `border-l flex flex-col h-full`,
+                `border-l border-slate-800 bg-slate-950 flex flex-col h-full text-slate-300`,
                 className,
             )}
         >
-            {/* Header */}
-            <div className="px-4 py-3 border-b flex items-center gap-2 shrink-0">
-                <MapPin className="size-4 text-blue-600" />
-                <Subtitle className="text-sm truncate">
-                    {locationName}
-                </Subtitle>
-            </div>
+            {/* Top Global Header */}
+            <header className="px-5 py-4 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-950/50 backdrop-blur-sm">
+                <Link 
+                    href="/" 
+                    className="text-lg font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 hover:opacity-80 transition-opacity"
+                >
+                    TORIBIA
+                </Link>
+                <button className="p-2 rounded-full hover:bg-slate-900 text-slate-400 hover:text-cyan-400 transition-colors group">
+                    <User className="size-5 group-hover:drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]" />
+                </button>
+            </header>
 
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-                {messages.map((message, index) => (
-                    <div key={message.id}>
-                        <div
-                            className={twMerge(
-                                "max-w-[90%] text-sm leading-relaxed",
-                                message.role === "user"
-                                    ? "ml-auto bg-blue-600 text-white rounded-2xl rounded-br-sm px-3 py-2"
-                                    : "mr-auto text-neutral-700",
-                            )}
-                        >
-                            {message.role === "assistant" ? (
-                                <Markdown
-                                    components={{
-                                        h1: ({ children }) => <h1 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h1>,
-                                        h2: ({ children }) => <h2 className="text-sm font-bold mb-1.5 mt-2.5 first:mt-0">{children}</h2>,
-                                        h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 mt-2 first:mt-0">{children}</h3>,
-                                        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                                        ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
-                                        ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
-                                        li: ({ children }) => <li>{children}</li>,
-                                        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                                        em: ({ children }) => <em className="italic">{children}</em>,
-                                        a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-700">{children}</a>,
-                                        blockquote: ({ children }) => <blockquote className="border-l-2 border-neutral-300 pl-3 italic text-neutral-500 my-2">{children}</blockquote>,
-                                        code: ({ children }) => <code className="bg-neutral-100 rounded px-1 py-0.5 text-xs font-mono">{children}</code>,
-                                    }}
-                                >
-                                    {message.content}
-                                </Markdown>
-                            ) : (
-                                message.content
-                            )}
-                        </div>
-
-                        {/* Suggestion chips after the last assistant message */}
-                        {message.role === "assistant" &&
-                            index === messages.length - 1 &&
-                            !isSending && (
-                                <div className="flex flex-wrap gap-2 mt-3">
-                                    {suggestions.map((s) => (
-                                        <button
-                                            key={s.label}
-                                            onClick={() =>
-                                                handleSuggestionClick(
-                                                    s.prompt(locationName!),
-                                                )
-                                            }
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full border border-neutral-200 text-neutral-600 bg-white hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-colors"
-                                        >
-                                            <s.icon className="size-3" />
-                                            {s.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                    </div>
-                ))}
-
-                {isSending && (
-                    <div className="flex items-center gap-2 text-neutral-400 text-xs">
-                        <Loader2 className="size-3 animate-spin" />
-                        Thinking...
-                    </div>
-                )}
-
-                <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input Area */}
-            <div className="px-3 py-3 border-t shrink-0">
-                <div className="flex items-center gap-2 bg-neutral-100 rounded-xl px-3 py-2">
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder={`Ask about ${locationName ?? "this place"}...`}
-                        disabled={isSending}
-                        className="flex-1 bg-transparent outline-none text-sm placeholder:text-neutral-400 disabled:opacity-50"
-                    />
-                    <button
-                        onClick={handleSend}
-                        disabled={!input.trim() || isSending}
-                        className="p-1.5 rounded-lg text-neutral-400 hover:text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-30 disabled:hover:text-neutral-400 disabled:hover:bg-transparent"
-                    >
-                        <SendHorizonal className="size-4" />
-                    </button>
+            {/* Content Area Switcher */}
+            {isLoading ? (
+                // LOADING STATE
+                <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="size-6 text-cyan-400 animate-spin" />
+                    <Description className="text-xs text-cyan-400/80">
+                        Fetching location info...
+                    </Description>
                 </div>
-            </div>
+            ) : !locationName ? (
+                // EMPTY STATE
+                <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center p-6">
+                    <Globe2 className="size-12 text-slate-800" />
+                    <Subtitle className="text-slate-200">
+                        Click a place on the globe
+                    </Subtitle>
+                    <Description className="text-xs text-slate-500">
+                        Select any location to learn about its history,
+                        culture, landmarks, and more.
+                    </Description>
+                </div>
+            ) : (
+                // CHAT INTERFACE
+                <>
+                    {/* Location Sub-Header */}
+                    <div className="px-4 py-3 border-b border-slate-800 flex items-center gap-2 shrink-0 bg-slate-950/30">
+                        <MapPin className="size-4 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+                        <Subtitle className="text-sm font-semibold text-slate-100 tracking-wide truncate">
+                            {locationName}
+                        </Subtitle>
+                    </div>
+
+                    {/* Messages Area */}
+                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                        {messages.map((message, index) => (
+                            <div key={message.id}>
+                                <div
+                                    className={twMerge(
+                                        "max-w-[90%] text-sm leading-relaxed",
+                                        message.role === "user"
+                                            ? "ml-auto bg-gradient-to-br from-blue-600 to-violet-600 text-white rounded-2xl rounded-br-sm px-4 py-2.5 shadow-lg shadow-blue-900/20"
+                                            : "mr-auto text-slate-300 pl-1",
+                                    )}
+                                >
+                                    {message.role === "assistant" ? (
+                                        <Markdown
+                                            components={{
+                                                h1: ({ children }) => <h1 className="text-base font-bold text-slate-100 mb-2 mt-3 first:mt-0">{children}</h1>,
+                                                h2: ({ children }) => <h2 className="text-sm font-bold text-slate-100 mb-1.5 mt-2.5 first:mt-0">{children}</h2>,
+                                                h3: ({ children }) => <h3 className="text-sm font-semibold text-cyan-200 mb-1 mt-2 first:mt-0">{children}</h3>,
+                                                p: ({ children }) => <p className="mb-2 last:mb-0 text-slate-300">{children}</p>,
+                                                ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1 marker:text-cyan-500">{children}</ul>,
+                                                ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1 marker:text-cyan-500">{children}</ol>,
+                                                li: ({ children }) => <li>{children}</li>,
+                                                strong: ({ children }) => <strong className="font-semibold text-cyan-100">{children}</strong>,
+                                                em: ({ children }) => <em className="italic text-slate-400">{children}</em>,
+                                                a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline decoration-cyan-400/30 hover:text-cyan-300 hover:decoration-cyan-300 transition-colors">{children}</a>,
+                                                blockquote: ({ children }) => <blockquote className="border-l-2 border-cyan-500/50 pl-3 italic text-slate-400 my-2 bg-slate-900/50 py-1 pr-2 rounded-r">{children}</blockquote>,
+                                                code: ({ children }) => <code className="bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 text-xs font-mono text-cyan-300">{children}</code>,
+                                            }}
+                                        >
+                                            {message.content}
+                                        </Markdown>
+                                    ) : (
+                                        message.content
+                                    )}
+                                </div>
+
+                                {/* Suggestion chips after the last assistant message */}
+                                {message.role === "assistant" &&
+                                    index === messages.length - 1 &&
+                                    !isSending && (
+                                        <div className="flex flex-wrap gap-2 mt-4 ml-1">
+                                            {suggestions.map((s) => (
+                                                <button
+                                                    key={s.label}
+                                                    onClick={() =>
+                                                        handleSuggestionClick(
+                                                            s.prompt(locationName!),
+                                                        )
+                                                    }
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full border border-slate-700 bg-slate-900/40 text-slate-400 hover:bg-cyan-950/30 hover:border-cyan-500/50 hover:text-cyan-300 transition-all duration-300 group"
+                                                >
+                                                    <s.icon className="size-3 text-slate-500 group-hover:text-cyan-400 transition-colors" />
+                                                    {s.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                            </div>
+                        ))}
+
+                        {isSending && (
+                            <div className="flex items-center gap-2 text-slate-500 text-xs pl-1">
+                                <Loader2 className="size-3 animate-spin text-cyan-500" />
+                                <span className="animate-pulse">Analyzing planetary data...</span>
+                            </div>
+                        )}
+
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    {/* Input Area */}
+                    <div className="px-3 py-3 border-t border-slate-800 shrink-0 bg-slate-950">
+                        <div className="flex items-center gap-2 bg-slate-900/50 border border-slate-800 rounded-xl px-3 py-2 focus-within:border-cyan-500/50 focus-within:bg-slate-900 transition-colors">
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                placeholder={`Ask about ${locationName ?? "this place"}...`}
+                                disabled={isSending}
+                                className="flex-1 bg-transparent outline-none text-sm text-slate-200 placeholder:text-slate-600 disabled:opacity-50"
+                            />
+                            <button
+                                onClick={handleSend}
+                                disabled={!input.trim() || isSending}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-cyan-400 hover:bg-cyan-950/30 transition-colors disabled:opacity-30 disabled:hover:text-slate-500 disabled:hover:bg-transparent"
+                            >
+                                <SendHorizonal className="size-4" />
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 };
