@@ -23,9 +23,21 @@ interface RightPanelProps {
 }
 
 const suggestions = [
-    { label: "Travel tours", icon: Compass, prompt: (name: string) => `What are the best travel tours and must-visit itineraries in ${name}?` },
-    { label: "Local foods", icon: UtensilsCrossed, prompt: (name: string) => `What are the must-try local foods and dishes in ${name}?` },
-    { label: "Culture", icon: Landmark, prompt: (name: string) => `Tell me about the culture, traditions, and cultural experiences to explore in ${name}.` },
+    { 
+        label: "Travel tours", 
+        icon: Compass, 
+        prompt: (name: string) => `Provide a bulleted list of the best travel tours and itineraries in ${name}. Bold the names of key landmarks and keep descriptions very concise.` 
+    },
+    { 
+        label: "Local foods", 
+        icon: UtensilsCrossed, 
+        prompt: (name: string) => `What are the must-try local foods in ${name}? List them as bullet points with a 1-sentence description for each.` 
+    },
+    { 
+        label: "Culture", 
+        icon: Landmark, 
+        prompt: (name: string) => `Tell me about the culture and traditions of ${name} using a few clear bullet points. Focus on what makes it unique.` 
+    },
 ];
 
 const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
@@ -61,12 +73,20 @@ const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
         if (!locationName) return;
 
         setIsSending(true);
-        const overviewPrompt = `Give me a brief, engaging overview of ${locationName}. Highlight what makes this place interesting — its history, culture, landmarks, and anything unique.`;
+        
+        // Refined prompt for structured, bulleted output
+        const overviewPrompt = `Give me a highly scannable overview of ${locationName}. 
+        Structure your response like this:
+        1. A brief, catchy 1-sentence introduction.
+        2. A "Highlights" section with 4-5 bullet points covering history, landmarks, and unique facts.
+        3. Use bold text for key terms.
+        Keep it punchy and avoid long paragraphs.`;
 
+        // We add a clean message to the UI, but send the detailed prompt to the AI
         addMessage({
             id: crypto.randomUUID(),
             role: "user",
-            content: overviewPrompt,
+            content: `Tell me about ${locationName}`,
         });
 
         try {
@@ -101,12 +121,14 @@ const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
         const userMessage = input.trim();
         setInput("");
 
-        const userMsg = {
+        // Instruct the AI to maintain the bulleted style for manual queries too
+        const structuredUserMessage = `${userMessage} (Please provide the answer in a concise, bulleted, and easy-to-read format if possible).`;
+
+        addMessage({
             id: crypto.randomUUID(),
-            role: "user" as const,
+            role: "user",
             content: userMessage,
-        };
-        addMessage(userMsg);
+        });
 
         setIsSending(true);
 
@@ -117,7 +139,7 @@ const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
             }));
 
             const response = await chatWithContext(
-                userMessage,
+                structuredUserMessage,
                 locationName,
                 history,
             );
@@ -146,12 +168,11 @@ const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
         if (isSending || !locationName) return;
         setInput("");
 
-        const userMsg = {
+        addMessage({
             id: crypto.randomUUID(),
-            role: "user" as const,
-            content: prompt,
-        };
-        addMessage(userMsg);
+            role: "user",
+            content: prompt.split('.')[0] + "...", // Show a shortened version in the chat bubble
+        });
 
         setIsSending(true);
 
@@ -197,7 +218,6 @@ const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
                 className,
             )}
         >
-            {/* Top Global Header */}
             <header className="px-5 py-4 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-950/50 backdrop-blur-sm">
                 <Link 
                     href="/" 
@@ -210,9 +230,7 @@ const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
                 </button>
             </header>
 
-            {/* Content Area Switcher */}
             {isLoading ? (
-                // LOADING STATE
                 <div className="flex-1 flex flex-col items-center justify-center gap-3">
                     <Loader2 className="size-6 text-cyan-400 animate-spin" />
                     <Description className="text-xs text-cyan-400/80">
@@ -220,7 +238,6 @@ const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
                     </Description>
                 </div>
             ) : !locationName ? (
-                // EMPTY STATE
                 <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center p-6">
                     <Globe2 className="size-12 text-slate-800" />
                     <Subtitle className="text-slate-200">
@@ -232,9 +249,7 @@ const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
                     </Description>
                 </div>
             ) : (
-                // CHAT INTERFACE
                 <>
-                    {/* Location Sub-Header */}
                     <div className="px-4 py-3 border-b border-slate-800 flex items-center gap-2 shrink-0 bg-slate-950/30">
                         <MapPin className="size-4 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
                         <Subtitle className="text-sm font-semibold text-slate-100 tracking-wide truncate">
@@ -242,7 +257,6 @@ const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
                         </Subtitle>
                     </div>
 
-                    {/* Messages Area */}
                     <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
                         {messages.map((message, index) => (
                             <div key={message.id}>
@@ -261,9 +275,9 @@ const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
                                                 h2: ({ children }) => <h2 className="text-sm font-bold text-slate-100 mb-1.5 mt-2.5 first:mt-0">{children}</h2>,
                                                 h3: ({ children }) => <h3 className="text-sm font-semibold text-cyan-200 mb-1 mt-2 first:mt-0">{children}</h3>,
                                                 p: ({ children }) => <p className="mb-2 last:mb-0 text-slate-300">{children}</p>,
-                                                ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1 marker:text-cyan-500">{children}</ul>,
-                                                ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1 marker:text-cyan-500">{children}</ol>,
-                                                li: ({ children }) => <li>{children}</li>,
+                                                ul: ({ children }) => <ul className="list-disc pl-4 mb-4 space-y-2 marker:text-cyan-500">{children}</ul>,
+                                                ol: ({ children }) => <ol className="list-decimal pl-4 mb-4 space-y-2 marker:text-cyan-500">{children}</ol>,
+                                                li: ({ children }) => <li className="text-slate-300">{children}</li>,
                                                 strong: ({ children }) => <strong className="font-semibold text-cyan-100">{children}</strong>,
                                                 em: ({ children }) => <em className="italic text-slate-400">{children}</em>,
                                                 a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline decoration-cyan-400/30 hover:text-cyan-300 hover:decoration-cyan-300 transition-colors">{children}</a>,
@@ -278,7 +292,6 @@ const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
                                     )}
                                 </div>
 
-                                {/* Suggestion chips after the last assistant message */}
                                 {message.role === "assistant" &&
                                     index === messages.length - 1 &&
                                     !isSending && (
@@ -312,7 +325,6 @@ const RightPanel: React.FC<RightPanelProps> = ({ className }) => {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Input Area */}
                     <div className="px-3 py-3 border-t border-slate-800 shrink-0 bg-slate-950">
                         <div className="flex items-center gap-2 bg-slate-900/50 border border-slate-800 rounded-xl px-3 py-2 focus-within:border-cyan-500/50 focus-within:bg-slate-900 transition-colors">
                             <input
