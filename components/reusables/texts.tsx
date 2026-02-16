@@ -13,3 +13,25 @@ export const Title : React.FC<TextProps> = ({
         </h1>
     )
 }
+
+export const Subtitle : React.FC<TextProps> = ({
+    children,
+    className,
+}) => { 
+    return (
+        <h2 className={`text-lg font-semibold ${className}`}>
+            {children}
+        </h2>
+    )
+}
+
+export const Description : React.FC<TextProps> = ({
+    children,
+    className,
+}) => {
+    return (
+        <p className={`text-neutral-500 ${className}`}>
+            {children}
+        </p>
+    )
+}
